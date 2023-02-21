@@ -1,0 +1,97 @@
+body {
+    margin: 0;
+    font-family: 'Raleway', sans-serif;
+    color: rgb(14, 14, 14);
+}
+
+a {
+    color: rgb(158, 70, 70);
+}
+
+h1 {
+    font-size: 30px;
+    margin: 5px;
+}
+
+button {
+    color: rgb(158, 70, 70);
+    background-color: #fff;
+    border: 2px solid rgb(158, 70, 70);
+    border-radius: 3px;
+    padding: 3px;
+    margin: 2px;
+}
+
+button:hover {
+    background-color: rgb(228, 199, 199);
+}
+
+#wrapper {
+    height: 100vh;
+    margin: 0;
+}
+
+#valikko {
+    width: 350px; 
+    height: 100vh; 
+    margin: 0;
+    float: left;
+}
+
+#valikkoheader {
+    height: 100px;
+    float: left;
+    text-align: center;
+    padding-top: 5px;
+}
+
+#map { 
+    height: 100%; 
+}
+
+#lista{
+    width: 340px; 
+    height: -moz-calc(100% - 150px); /* Firefox */
+    height: -webkit-calc(100% - 150px); /* Chrome, Safari */
+    height: calc(100% - 150px); /* IE9+ and future browsers */
+    overflow-y: scroll; 
+    float: left;
+    padding: 0 5px 0 5px;
+}
+
+#lista p:hover {
+    background-color: #cccccc;
+}
+
+#footer {
+    width: 350px;
+    height: 50px;
+    float: left;
+    position: fixed;
+    bottom: 0;
+    font-size: 10px;
+    margin-left: 5px;
+    background-color: #fff;
+}
+
+.loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -60px 0 0 -60px;
+    border: 10px solid #ffffff;
+    border-top: 10px solid rgb(158, 70, 70);
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    animation: spin 1s linear infinite;
+ }
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hide-loader{
+display:none;
+}

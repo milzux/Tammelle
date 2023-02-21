@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Synnytyssairaalakartta</title>
+        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300&display=swap" rel="stylesheet">
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
+    </head>
+
+    <body onload="sairaalat()">
+        <div id ="wrapper">
+            <div id="valikko">
+                <div id="valikkoheader">
+                    <h1>Synnytyssairaalakartta</h1>
+                    <p><button id="button1">Näytä kaikki sairaalat</button><button id="button2">Näytä sijaintini</button><button id="button3">Lähin sairaala</button></p>
+                </div>
+                <div id="lista"></div>
+                <div id="footer">
+                    <p>Milla Jääskeläinen 2021 <br>Source <a href="https://www.eu-terveydenhoito.fi/yhteystiedot/julkinen-terveydenhuolto/synnytyssairaalat/">www.eu-terveydenhoito.fi</a> <br>Icons made by <a href="" title="monkik">monkik</a> and <a href="" title="mavadee">mavadee</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></p>
+                </div>
+            </div>
+            <div id="map"><div class="loader" id="loader"></div></div> 
+        </div>
+
+    <script>
+
+        //sairaaloiden tiedot ja kartan lataus
+        function sairaalat() {
+            $(document).ready(function(){
+            $.get("https://www.eu-terveydenhoito.fi/yhteystiedot/julkinen-terveydenhuolto/synnytyssairaalat/", {}, function(results){
+                $("#lista").append($(results).find("#rspeak_read_8171").html());
+                $('#lista').find("p").first().remove();
+                $('#lista').find("h2").remove();
+                $("#lista").children("p").each(function (i) { 
+                    $(this).attr("id","s"+i);
+                });
+            kartta();    
+            });
+        });
+        }
+
+        //kartta
+        function kartta() {
+            var map = L.map('map', {
+                
+            });
+
+            L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWlsenV4IiwiYSI6ImNrcmhvdnhnMjYxaXIycG54MDZxajRmeXcifQ.XPBprdO2bDXNL1_beOsdoA', {
+                maxZoom: 18,
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+                    'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                id: 'mapbox/streets-v11',
+                tileSize: 512,
+                zoomOffset: -1
+            }).addTo(map);
+
+            //paikannus
+            var youreHere = L.icon({
+                iconUrl: 'woman.png',
+                iconSize:     [40, 40],
+                iconAnchor:   [20, 46],
+                popupAnchor:  [-3, -66]
+            });
+            var hereIam;
+
+            function onLocationFound(e) {
+                L.marker(e.latlng, {icon: youreHere}).addTo(map)
+                    .bindPopup("Olet tässä!").openPopup();
+                hereIam = e.latlng;
+                return hereIam
+            }
+
+            function onLocationError(e) {
+                alert(e.message);
+            }
+
+            map.on('locationfound', onLocationFound);
+            map.on('locationerror', onLocationError);
+            map.locate({setView: true, maxZoom: 15});
+
+            //sairaaloiden sijainnit
+            function addressToLatLong(i) {
+                var address = $("#s"+i).find("strong").text();
+                var scriptUrl = 'https://nominatim.openstreetmap.org/search?format=json&q='+address;
+                $.ajax({
+                    url: scriptUrl,
+                    type: 'get',
+                    dataType: 'json',
+                    async: false,
+                    success: function(data) {
+                        tiedot = [data[0].lat, data[0].lon, document.getElementById("s"+i).innerHTML]
+                        markers[i] = tiedot;
+                    } 
+                });
+            }
+
+            var elements = document.getElementById('lista').getElementsByTagName("p");
+            var markers = [];
+            var tiedot;
+            var hospital = L.icon({
+                iconUrl: 'hospital.png',
+                iconSize:     [40, 40],
+                iconAnchor:   [20, 46],
+                popupAnchor:  [-3, -66]
+            });
+
+            for (var i=0; i<elements.length; i++) {
+                addressToLatLong(i);
+                var lat = markers[i][0];
+                var lon = markers[i][1];
+                var popupText = markers[i][2];
+                var markerLocation = new L.LatLng(lat, lon);
+                var marker = new L.Marker(markerLocation, {icon: hospital});
+                map.addLayer(marker);
+                marker.bindPopup(popupText);
+            }
+            
+            //sairaalalistan linkit
+            $("#lista").children("p").each(function (i) { 
+                    $(this).click(function(){
+                        var latm = markers[i][0];
+                        var lonm = markers[i][1];
+                        map.flyTo([latm, lonm], 13);
+                        $(this).css({"background-color": "rgb(228, 199, 199)"});
+                        $(this).siblings().css({"background-color": "white"});
+                        }); 
+                });
+
+            //näytä kaikki sairaalat
+            document.getElementById("button1").addEventListener("click", function() {
+                map.flyTo([64.96, 26.59], 5);
+                });
+
+            //näytä oma sijainti
+            document.getElementById("button2").addEventListener("click", function() {
+                map.flyTo(hereIam, 13);
+                });
+
+            //lähin sairaala
+            var distances = [];
+            document.getElementById("button3").addEventListener("click", function() {
+                for (var i=0; i<elements.length; i++) {
+                var latmark = parseFloat(markers[i][0]);
+                var lonmark = parseFloat(markers[i][1]);
+                var markerloc = [latmark, lonmark];
+                var myloc = [hereIam.lat, hereIam.lng]
+                var distance = math.distance(myloc, markerloc);
+                distances[i] = distance;
+                }
+                var index=distances.indexOf(Math.min.apply(null,distances))
+                var latnear = markers[index][0];
+                var lonnear = markers[index][1];
+                var nearest = [latnear, lonnear];
+                map.flyTo(nearest, 13);
+                });
+
+            $('#loader').addClass("hide-loader");
+        }
+        
+    </script>
+
+    </body>
+</html>
